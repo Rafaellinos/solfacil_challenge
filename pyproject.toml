@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "solfacil-challenge"
+version = "0.1.0"
+description = ""
+authors = ["Rafael Veloso Lino de Souza <rvlsouza@brasilseg.com.br>"]
+readme = "README.md"
+packages = [{include = "solfacil_challenge"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.95.2"
+requests = "^2.31.0"
+pydantic = "^1.10.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
