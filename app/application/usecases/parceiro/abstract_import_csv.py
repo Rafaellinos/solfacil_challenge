@@ -6,6 +6,6 @@ from app.application.dtos.parceiro_dto import ParceiroDto
 
 class AbstractImportCsvUseCase(ABC):
     @abstractmethod
-    def execute(self, csv_content: str) -> Dict[str, List[ParceiroDto]]:
+    async def execute(self, csv_content: str) -> Dict[str, List[ParceiroDto]]:
         """Process the given CSV content to update or create Parceiros"""
         pass

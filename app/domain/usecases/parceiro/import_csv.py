@@ -3,11 +3,13 @@ from typing import List, Dict
 import re
 
 import pandas as pd
+from pandas import Series
 
 from app.application.dtos.parceiro_dto import ParceiroDto
 from app.application.ports.parceiro.parceiro_repository import AbstractParceiroRepository
 from app.application.usecases.parceiro.abstract_import_csv import AbstractImportCsvUseCase
 from app.domain.entities.parceiro.parceiro import Parceiro
+from app.infrastructure.integrations.via_cep import ViaCep
 
 
 class ImportCsvUseCase(AbstractImportCsvUseCase):
@@ -25,32 +27,43 @@ class ImportCsvUseCase(AbstractImportCsvUseCase):
             return self.parceiro_repository.update(parceiro)
         return self.parceiro_repository.add(parceiro)
 
-    def execute(self, csv_content: str) -> Dict[str, List[ParceiroDto]]:
+
+    async def __get_parceiro(self, parceiro_row: Series) -> Parceiro:
+        parceiro = Parceiro(
+            cnpj=self.__sanitize_string(parceiro_row.get('CNPJ')),
+            razao_social=parceiro_row.get('Razão Social'),
+            nome_fantasia=parceiro_row.get('Nome Fantasia'),
+            telefone=self.__sanitize_string(parceiro_row.get('Telefone')),
+            email=parceiro_row.get('Email'),
+            cep=self.__sanitize_string(parceiro_row.get('CEP')),
+        )
+
+        if address := await ViaCep(parceiro.cep).get_address():
+            parceiro.cidade = address.get('cidade')
+            parceiro.estado = address.get('estado')
+
+        if existing_parceiro := self.parceiro_repository.get_by_cnpj(parceiro.cnpj):
+            parceiro.id = existing_parceiro.id
+
+        return parceiro
+
+    async def execute(self, csv_content: str) -> Dict[str, List[ParceiroDto]]:
         df = pd.read_csv(StringIO(csv_content))
 
         parceiros_to_process = []
         for _, row in df.iterrows():
-            parceiro = Parceiro(
-                cnpj=self.__sanitize_string(row.get('CNPJ')),
-                razao_social=row.get('Razão Social'),
-                nome_fantasia=row.get('Nome Fantasia'),
-                telefone=self.__sanitize_string(row.get('Telefone')),
-                email=row.get('Email'),
-                cep=self.__sanitize_string(row.get('CEP')),
-            )
-            existing_parceiro = self.parceiro_repository.get_by_cnpj(parceiro.cnpj)
-            if existing_parceiro:
-                parceiro.id = existing_parceiro.id
-            parceiros_to_process.append(parceiro)
+            parceiros_to_process.append(await self.__get_parceiro(row))
 
         parceiros = {"created": [], "updated": []}
-        for parceiro in parceiros_to_process:
-            if parceiro.id:
-                parceiros["updated"].append(
-                    self.parceiro_repository.update(parceiro)
-                )
-            else:
-                parceiros["created"].append(
-                    self.parceiro_repository.add(parceiro)
-                )
+
+        with self.parceiro_repository.begin_transaction():
+            for parceiro in parceiros_to_process:
+                if parceiro.id:
+                    parceiros["updated"].append(
+                        self.parceiro_repository.update(parceiro)
+                    )
+                else:
+                    parceiros["created"].append(
+                        self.parceiro_repository.add(parceiro)
+                    )
         return parceiros

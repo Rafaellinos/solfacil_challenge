@@ -9,3 +9,5 @@ class ParceiroDto(BaseModel):
     telefone: str
     email: str
     cep: str
+    cidade: str | None = Field(default=None)
+    estado: str | None = Field(default=None)

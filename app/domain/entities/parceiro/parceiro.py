@@ -9,3 +9,5 @@ class Parceiro(BaseModel):
     telefone: str = Field(..., min_length=11, max_length=12, example="11966076344")
     email: str = Field(..., example="email@email.com")
     cep: str = Field(..., min_length=8, max_length=8, example="00000000")
+    cidade: str | None = Field(default=None)
+    estado: str | None = Field(default=None)

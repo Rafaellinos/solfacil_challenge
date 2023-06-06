@@ -1,9 +1,8 @@
-from typing import Dict, List, Annotated
 import logging
+from typing import Dict, List, Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from pydantic import ValidationError
-
 
 from app.application.dtos.parceiro_dto import ParceiroDto
 from app.interfaces.api.controller.parceiro_controller import get_controller, ParceiroController
@@ -25,7 +24,7 @@ async def upload_csv(
 ):
     content = await file.read()
     try:
-        parceiros = controller.upload_csv(content.decode())
+        parceiros = await controller.upload_csv(content.decode())
     except ValidationError as err:
         raise HTTPException(status_code=400, detail=err.errors()) from err
     except Exception as err:
@@ -43,6 +42,7 @@ async def get_all_parceiros(
         controller: Annotated[ParceiroController, Depends(common_params)],
 ):
     try:
-        return controller.get_all_parceiros()
+        return await controller.get_all_parceiros()
     except Exception as err:
+        logging.critical(err)
         raise HTTPException(status_code=500, detail=str(err))

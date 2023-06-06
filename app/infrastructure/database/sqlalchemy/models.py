@@ -13,3 +13,5 @@ class ParceiroModel(Base):
     telefone = Column(String)
     email = Column(String, nullable=False)
     cep = Column(String, nullable=False)
+    cidade  = Column(String, nullable=True)
+    estado = Column(String, nullable=True)

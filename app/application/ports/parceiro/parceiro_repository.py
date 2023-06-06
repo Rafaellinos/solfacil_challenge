@@ -33,3 +33,7 @@ class AbstractParceiroRepository(ABC):
     @abstractmethod
     def get_by_cnpj(self, cnpj: str) -> ParceiroDto:
         pass
+
+    @abstractmethod
+    def begin_transaction(self):
+        pass

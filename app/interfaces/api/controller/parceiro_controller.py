@@ -1,5 +1,4 @@
 from typing import List, Dict
-from pydantic import ValidationError
 
 from app.application.dtos.parceiro_dto import ParceiroDto
 from app.application.ports.parceiro.parceiro_repository import AbstractParceiroRepository
@@ -17,11 +16,11 @@ class ParceiroController:
         self.repo = repo
         self.usecase = usecase
 
-    def get_all_parceiros(self) -> List[ParceiroDto]:
+    async def get_all_parceiros(self) -> List[ParceiroDto]:
         return self.repo.get_all()
 
-    def upload_csv(self, csv_file: str) -> Dict[str, List[ParceiroDto]]:
-        parceiros_updated_created: Dict[str, List[ParceiroDto]] = self.usecase.execute(
+    async def upload_csv(self, csv_file: str) -> Dict[str, List[ParceiroDto]]:
+        parceiros_updated_created: Dict[str, List[ParceiroDto]] = await self.usecase.execute(
             csv_file,
         )
         return parceiros_updated_created
