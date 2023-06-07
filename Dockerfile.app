@@ -5,15 +5,23 @@ ENV PYTHONDONTWRITEBYTECODE 1 \
 
 WORKDIR /app
 
-RUN pip install "poetry==1.1.8"
+RUN pip install "poetry==1.5.1"
 
-COPY pyproject.toml poetry.lock* /app/
+ENV POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
+    POETRY_NO_INTERACTION=1
 
-RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi
+COPY pyproject.toml poetry.lock* entrypoint.sh alembic.ini /app/
 
-COPY . /app
+RUN chmod +x /app/entrypoint.sh
+
+RUN poetry install --no-root --only main
+
+RUN apt-get update \
+  && apt-get -y install netcat gcc postgresql \
+  && apt-get clean
+
+COPY app /app
 
 EXPOSE 8000
-
-CMD ["uvicorn", "my_fast_app.main:app", "--host", "0.0.0.0", "--port", "8000"]

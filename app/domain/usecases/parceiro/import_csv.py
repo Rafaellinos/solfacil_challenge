@@ -10,6 +10,7 @@ from app.application.ports.parceiro.parceiro_repository import AbstractParceiroR
 from app.application.usecases.parceiro.abstract_import_csv import AbstractImportCsvUseCase
 from app.domain.entities.parceiro.parceiro import Parceiro
 from app.infrastructure.integrations.via_cep import ViaCep
+from app.domain.usecases.email_sender.email_sender import EmailSender
 
 
 class ImportCsvUseCase(AbstractImportCsvUseCase):
@@ -47,6 +48,15 @@ class ImportCsvUseCase(AbstractImportCsvUseCase):
 
         return parceiro
 
+    async def __send_welcome_email(self, parceiros: List[Parceiro]) -> None:
+        for parceiro in parceiros:
+            await EmailSender().send(
+                recipient=parceiro.email,
+                subject=f"Bem vindo {parceiro.nome_fantasia or parceiro.razao_social}",
+                body=
+                f"Olá {parceiro.nome_fantasia or parceiro.razao_social}, seja bem vindo ao nosso sistema!",
+            )
+
     async def execute(self, csv_content: str) -> Dict[str, List[ParceiroDto]]:
         df = pd.read_csv(StringIO(csv_content))
 
@@ -55,7 +65,6 @@ class ImportCsvUseCase(AbstractImportCsvUseCase):
             parceiros_to_process.append(await self.__get_parceiro(row))
 
         parceiros = {"created": [], "updated": []}
-
         with self.parceiro_repository.begin_transaction():
             for parceiro in parceiros_to_process:
                 if parceiro.id:
@@ -66,4 +75,6 @@ class ImportCsvUseCase(AbstractImportCsvUseCase):
                     parceiros["created"].append(
                         self.parceiro_repository.add(parceiro)
                     )
+        await self.__send_welcome_email(parceiros["created"])
+
         return parceiros

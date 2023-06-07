@@ -1,11 +1,11 @@
-from typing import Generator
-
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import os
 from contextlib import contextmanager
 
-SQLALCHEMY_DATABASE_URL = "postgresql://fastapiuser:fastapi123@localhost:5430/parceiros"
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://fastapiuser:fastapi123@postgres12a:5432/parceiros")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={}
